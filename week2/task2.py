@@ -8,7 +8,7 @@ class Tree:
         self.nodes = [""] * 26
         self.count = 0
 
-    def insert(self, word):
+    def insert(self, word: str):
         node = self
         for c in word:
             if node.nodes[ord(c) - ord("a")] == "":
@@ -16,7 +16,7 @@ class Tree:
             node = node.nodes[ord(c) - ord("a")]
             node.count += 1
 
-    def search(self, word):
+    def search(self, word: str):
         node = self
         total = 0
         for c in word:
