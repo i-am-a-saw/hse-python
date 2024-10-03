@@ -4,13 +4,13 @@ https://leetcode.com/problems/container-with-most-water/description/?envType=pro
 
 
 class Solution(object):
-    def maxArea(self, height):
+    def maxArea(self, height: List[int]) -> int:
         left, right = 0, len(height) - 1
         curr_vol = 0
 
         while left != right:
-            if (right - left) * (min(height[left], height[right])) > curr_vol:
-                curr_vol = (right - left) * (min(height[left], height[right]))
+            if (right - left) * min(height[left], height[right]) > curr_vol:
+                curr_vol = (right - left) * min(height[left], height[right])
             if height[left] < height[right]:
                 left += 1
             else:
