@@ -2,7 +2,7 @@ from collections import defaultdict
 
 
 class Solution:
-    def max_subarray_length(self, nums: List[int], k: int) -> int:
+    def maxSubarrayLength(self, nums: List[int], k: int) -> int:
         frequency_counter = defaultdict(int)
         max_length = 0
         left_pointer = 0
