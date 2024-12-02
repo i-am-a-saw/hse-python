@@ -2,8 +2,8 @@
 https://leetcode.com/problems/longest-nice-subarray/?envType=problem-list-v2&envId=sliding-window
 """
 
-
 from typing import List
+
 
 class Solution:
     def longestNiceSubarray(self, nums: List[int]) -> int:
