@@ -1,9 +1,10 @@
 import tkinter as tk
 import sqlite3
+import os
 from tkinter import messagebox, ttk
 
 USER = "User"
-PASSWORD = "Super-SEcure"
+PASSWORD = "Password"
 
 class LoginPage(tk.Frame):
 
@@ -94,17 +95,18 @@ class MainPage:
         # Ввод данных о производителе
         self.f1 = tk.Frame(self.master, width = 100, height = 100, relief=tk.GROOVE, borderwidth=4)
         self.f1.grid(row=0, column=0)
-        
-        tk.Label(self.f1, text="Producer Name").grid(row=0, column=0)
+
+        tk.Label(self.f1, text = "Producers", font=("TimesNewRoman", 14)).grid(row=0, column=0, columnspan=3)
+        tk.Label(self.f1, text="Producer Name").grid(row=1, column=0)
         self.producer_name_entry = tk.Entry(self.f1)
-        self.producer_name_entry.grid(row=0, column=1)
+        self.producer_name_entry.grid(row=1, column=1)
 
-        tk.Label(self.f1, text="Country").grid(row=1, column=0)
+        tk.Label(self.f1, text="Country").grid(row=2, column=0)
         self.producer_country_entry = tk.Entry(self.f1)
-        self.producer_country_entry.grid(row=1, column=1)
+        self.producer_country_entry.grid(row=2, column=1)
 
-        tk.Button(self.f1, text="Add Producer", command=self.add_producer).grid(row=2, column=1)
-        tk.Button(self.f1, text="Delete Producer", command=self.delete_producer).grid(row=8, column=1)
+        tk.Button(self.f1, text="Add Producer", command=self.add_producer).grid(row=3, column=1)
+        tk.Button(self.f1, text="Delete Producer", command=self.delete_producer).grid(row=9, column=1)
 
         # Таблица для отображения производителей
         self.columns1 = ("ID", "Name", "Country", "Total Price")
@@ -114,16 +116,16 @@ class MainPage:
         self.tree1.heading("Name", text="Name")
         self.tree1.heading("Country", text="Country")
         self.tree1.heading("Total Price", text="Total Price")
-        self.tree1.grid(row=4, columnspan=2)
+        self.tree1.grid(row=5, columnspan=2)
 
         # Поиск по имени производителя
         tk.Label(self.f1, text="Search producer:").grid(row=6, column = 0)
         self.search_producer_entry = tk.Entry(self.f1)
         self.search_producer_entry.grid(row=7, column = 0)
-        tk.Button(self.f1, text="Search", command = self.search_producers).grid(row=8, column=0)
+        tk.Button(self.f1, text="Search", command = self.search_producers).place(x=120, y=319)
 
         # Вывод всей таблицы
-        tk.Button(self.f1, text="Reset", command=self.load_producers).grid(row=6, column=1)
+        tk.Button(self.f1, text="Reset", command=self.load_producers).place(x=167, y=319)
         tk.Button(self.f1, text="Clear All", command=self.clear_producers).grid(row=7, column=1)
 
         # Загрузка существующих производителей при запуске
@@ -132,34 +134,42 @@ class MainPage:
         # Ввод данных о виде пива
         self.f2 = tk.Frame(self.master, width = 100, height = 100, relief=tk.GROOVE, borderwidth=4)
         self.f2.grid(row=0, column=1)
-        
-        tk.Label(self.f2, text="Beer Name").grid(row=0, column=0)
-        self.beer_name_entry = tk.Entry(self.f2)
-        self.beer_name_entry.grid(row=0, column=1)
 
-        tk.Label(self.f2, text="Alcohol Content").grid(row=1, column=0)
+        tk.Label(self.f2, text = "Beer Tastes", font=("TimesNewRoman", 14)).grid(row=0, column=0, columnspan=3)
+        tk.Label(self.f2, text="Beer Taste").grid(row=1, column=0)
+        self.beer_name_entry = tk.Entry(self.f2)
+        self.beer_name_entry.grid(row=1, column=1)
+
+        tk.Label(self.f2, text="Alcohol Content").grid(row=2, column=0)
         self.beer_alcohol_entry = tk.Entry(self.f2)
 
-        self.beer_alcohol_entry.grid(row=1, column=1)
+        self.beer_alcohol_entry.grid(row=2, column=1)
 
-        tk.Label(self.f2, text="Producer ID").grid(row=2, column=0)
+        tk.Label(self.f2, text="Producer ID").grid(row=3, column=0)
         self.beer_producer_id_entry = tk.Entry(self.f2)
-        self.beer_producer_id_entry.grid(row=2, column=1)
+        self.beer_producer_id_entry.grid(row=3, column=1)
 
-        tk.Button(self.f2, text="Add Beer Type", command=self.add_beer_type).grid(row=3, column=1)
-        tk.Button(self.f2, text="Delete Beer Type", command=self.delete_beer_type).grid(row=5, column=1)
-
+        tk.Button(self.f2, text="Add Beer Type", command=self.add_beer_type).grid(row=4, column=1)
+        tk.Button(self.f2, text="Delete Beer Type", command=self.delete_beer_type).grid(row=7, column=1)
+        
         tk.Button(self.f2, text="Clear All", command=self.clear_beer_types).grid(row=6, column=1)
 
         # Таблица для отображения видов пива
-        self.columns2 = ("ID", "Beer Name", "Alcohol Content", "Producer ID")
+        self.columns2 = ("ID", "Beer Taste", "Alcohol Content", "Producer ID")
         self.tree2 = ttk.Treeview(self.f2, columns=self.columns2, show='headings')
         self.tree2.column("ID", width=50)
         self.tree2.heading("ID", text="ID")
-        self.tree2.heading("Beer Name", text="Beer Name")
+        self.tree2.heading("Beer Taste", text="Beer Taste")
         self.tree2.heading("Alcohol Content", text="Alcohol Content")
         self.tree2.heading("Producer ID", text="Producer ID")
-        self.tree2.grid(row=4, columnspan=2)
+        self.tree2.grid(row=5, columnspan=2)
+
+        # Поиск по имени производителя
+        tk.Label(self.f2, text="Search beer type:").grid(row=6, column = 0)
+        self.search_beer_type_entry = tk.Entry(self.f2)
+        self.search_beer_type_entry.grid(row=7, column = 0)
+        tk.Button(self.f2, text="Search", command = self.search_beer_type).place(x=227, y=319)
+        tk.Button(self.f2, text="Reset", command=self.load_beer_types).place(x=275, y=319)
 
         # Загрузка пива при запуске
         self.load_beer_types()
@@ -168,25 +178,26 @@ class MainPage:
         self.f3 = tk.Frame(self.master, width = 100, height = 100, relief=tk.GROOVE, borderwidth=4)
         self.f3.grid(row=1, column=0)
 
-        tk.Label(self.f3, text="Beer Name").grid(row=0, column=0)
+        tk.Label(self.f3, text = "Bottles", font=("TimesNewRoman", 14)).grid(row=0, column=0, columnspan=3)
+        tk.Label(self.f3, text="Beer Name").grid(row=1, column=0)
         self.bottle_name_entry = tk.Entry(self.f3)
-        self.bottle_name_entry.grid(row=0, column=1)
+        self.bottle_name_entry.grid(row=1, column=1, columnspan=2)
 
-        tk.Label(self.f3, text="Volume").grid(row=1, column=0)
+        tk.Label(self.f3, text="Volume").grid(row=2, column=0)
         self.volume_entry = tk.Entry(self.f3)
-        self.volume_entry.grid(row=1, column=1)
+        self.volume_entry.grid(row=2, column=1, columnspan=2)
 
-        tk.Label(self.f3, text="Price").grid(row=2, column=0)
+        tk.Label(self.f3, text="Price").grid(row=3, column=0)
         self.price_entry = tk.Entry(self.f3)
-        self.price_entry.grid(row=2, column=1)
+        self.price_entry.grid(row=3, column=1, columnspan=2)
 
-        tk.Label(self.f3, text="Producer Name").grid(row=3, column=0)
+        tk.Label(self.f3, text="Producer Name").grid(row=4, column=0)
         self.beer_prod_entry = tk.Entry(self.f3)
-        self.beer_prod_entry.grid(row=3, column=1)
+        self.beer_prod_entry.grid(row=4, column=1, columnspan=2)
 
-        tk.Button(self.f3, text="Add Bottle", command=self.add_bottle).grid(row=4, column=1, columnspan=2)
-        tk.Button(self.f3, text="Delete Bottle", command=self.delete_bottle).grid(row=6, column=1)
-        tk.Button(self.f3, text="Clear All", command=self.clear_bottles).grid(row=7, column=1)
+        tk.Button(self.f3, text="Add Bottle", command=self.add_bottle).grid(row=5, column=1, columnspan=2)
+        tk.Button(self.f3, text="Delete Bottle", command=self.delete_bottle).grid(row=9, column=2)
+        tk.Button(self.f3, text="Clear All", command=self.clear_bottles).grid(row=8, column=2)
 
         # Таблица для отображения бутылок
         self.columns3 = ("ID", "Name", "Volume", "Price", "Producer Name")
@@ -200,7 +211,20 @@ class MainPage:
         self.tree3.column("Price", width=130)
         self.tree3.heading("Price", text="Price")
         self.tree3.heading("Producer Name", text="Producer Name")
-        self.tree3.grid(row=5, columnspan=2)
+        self.tree3.grid(row=6, columnspan=3)
+
+        # Удаление по ID бутылки
+        tk.Label(self.f3, text="Delete bottle by Beer Name:").grid(row=7, column = 1)
+        self.search_bottle_for_deletion_entry = tk.Entry(self.f3)
+        self.search_bottle_for_deletion_entry.grid(row=8, column = 1)
+        tk.Button(self.f3, text="Delete", command = self.delete_bottle_by_beer_name).grid(row=9, column=1)
+
+        # Поиск по названию бутылки
+        tk.Label(self.f3, text="Search bottle:").grid(row=7, column = 0)
+        self.search_bottle_name_entry = tk.Entry(self.f3)
+        self.search_bottle_name_entry.grid(row=8, column = 0)
+        tk.Button(self.f3, text="Search", command = self.search_bottles).place(x=68, y=361)
+        tk.Button(self.f3, text="Reset", command=self.load_bottles).place(x=115, y=361)
     
         # Загрузка бутылок при запуске
         self.load_bottles()
@@ -209,25 +233,26 @@ class MainPage:
         self.f4 = tk.Frame(self.master, width = 100, height = 100, relief=tk.GROOVE, borderwidth=4)
         self.f4.grid(row=1, column=1)
 
-        tk.Label(self.f4, text="Bottle ID").grid(row=0, column=0)
+        tk.Label(self.f4, text = "Sales", font=("TimesNewRoman", 14)).grid(row=0, column=0, columnspan=3)
+        tk.Label(self.f4, text="Bottle ID").grid(row=1, column=0)
         self.bottle_id_entry = tk.Entry(self.f4)
-        self.bottle_id_entry.grid(row=0, column=1)
+        self.bottle_id_entry.grid(row=1, column=1, columnspan=2)
 
-        tk.Label(self.f4, text="Beer Type ID").grid(row=1, column=0)
+        tk.Label(self.f4, text="Beer Type ID").grid(row=2, column=0)
         self.beer_type_entry = tk.Entry(self.f4)
-        self.beer_type_entry.grid(row=1, column=1)
+        self.beer_type_entry.grid(row=2, column=1, columnspan=2)
 
-        tk.Label(self.f4, text="Cost").grid(row=2, column=0)
+        tk.Label(self.f4, text="Cost").grid(row=3, column=0)
         self.cost_entry = tk.Entry(self.f4)
-        self.cost_entry.grid(row=2, column=1)
+        self.cost_entry.grid(row=3, column=1, columnspan=2)
 
-        tk.Label(self.f4, text="Date").grid(row=3, column=0)
+        tk.Label(self.f4, text="Date").grid(row=4, column=0)
         self.date_entry = tk.Entry(self.f4)
-        self.date_entry.grid(row=3, column=1)
+        self.date_entry.grid(row=4, column=1, columnspan=2)
 
-        tk.Button(self.f4, text="Add Sale", command=self.add_sale).grid(row=4, column=1, columnspan=2)
-        tk.Button(self.f4, text="Delete Sale", command=self.delete_sale).grid(row=6, column=1)
-        tk.Button(self.f4, text="Clear All", command=self.clear_sales).grid(row=7, column=1)
+        tk.Button(self.f4, text="Add Sale", command=self.add_sale).grid(row=5, column=1, columnspan=2)
+        tk.Button(self.f4, text="Delete Sale", command=self.delete_sale).grid(row=9, column=2)
+        tk.Button(self.f4, text="Clear All", command=self.clear_sales).grid(row=8, column=2)
 
         # Таблица для отображения продаж
         self.columns4 = ("ID", "Bottle ID", "Beer Type ID", "Cost", "Date")
@@ -242,11 +267,26 @@ class MainPage:
         self.tree4.heading("Cost", text="Cost")
         self.tree4.column("Date", width=155)
         self.tree4.heading("Date", text="Date")
-        
-        self.tree4.grid(row=5, columnspan=2)
+        self.tree4.grid(row=6, columnspan=3)
+
+        # Поиск по ID бутылки
+        tk.Label(self.f4, text="Search sale:").grid(row=7, column = 0)
+        self.search_sale_name_entry = tk.Entry(self.f4)
+        self.search_sale_name_entry.grid(row=8, column = 0)
+        tk.Button(self.f4, text="Search", command = self.search_sales).place(x=68, y=361)
+        tk.Button(self.f4, text="Reset", command=self.load_sales).place(x=115, y=361)
+
+        # Удаление по ID продажи
+        tk.Label(self.f4, text="Delete sale by Bottle ID:").grid(row=7, column = 1)
+        self.search_bottle_id_deletion_entry = tk.Entry(self.f4)
+        self.search_bottle_id_deletion_entry.grid(row=8, column = 1)
+        tk.Button(self.f4, text="Delete", command = self.delete_sale_by_bottle_id).grid(row=9, column=1)
     
         # Загрузка продаж при запуске
         self.load_sales()
+
+        # Кнопка сноса датабазы
+        tk.Button(self.master, text="Delete Database", command=self.annihilation).grid(row=2, column=1)
         
 
     def add_producer(self):
@@ -383,6 +423,42 @@ class MainPage:
         for row in results:
             self.tree1.insert("", tk.END, values=row)
 
+    def search_beer_type(self):
+        self.cursor.execute("SELECT * FROM BeerTypes WHERE name LIKE ?", ('%' + self.search_beer_type_entry.get() + '%',))
+        
+        results = self.cursor.fetchall()  # Получаем все результаты
+        
+        for row in self.tree2.get_children():
+            self.tree2.delete(row)
+        
+        
+        for row in results:
+            self.tree2.insert("", tk.END, values=row)
+
+    def search_bottles(self):
+        self.cursor.execute("SELECT * FROM Bottles WHERE beer_name LIKE ?", ('%' + self.search_bottle_name_entry.get() + '%',))
+        
+        results = self.cursor.fetchall()  # Получаем все результаты
+        
+        for row in self.tree3.get_children():
+            self.tree3.delete(row)
+        
+        
+        for row in results:
+            self.tree3.insert("", tk.END, values=row)
+
+    def search_sales(self):
+        self.cursor.execute("SELECT * FROM Sales WHERE bottle_id LIKE ?", ('%' + self.search_sale_name_entry.get() + '%',))
+        
+        results = self.cursor.fetchall()  # Получаем все результаты
+        
+        for row in self.tree4.get_children():
+            self.tree4.delete(row)
+        
+        
+        for row in results:
+            self.tree4.insert("", tk.END, values=row)
+
     def load_producers(self):
         # Очистка списка перед загрузкой новых данных
         for row in self.tree1.get_children():
@@ -422,6 +498,46 @@ class MainPage:
     def clear_entries(self):
         self.producer_name_entry.delete(0, tk.END)
         self.producer_country_entry.delete(0, tk.END)
+
+    def delete_bottle_by_beer_name(self):
+        delete_id = self.search_bottle_for_deletion_entry.get()
+        
+        try:
+            # Удаление записи из таблицы Sales
+            self.cursor.execute("DELETE FROM Bottles WHERE beer_name = ?", (delete_id,))
+            
+            # Проверка, сколько строк было удалено
+            if self.cursor.rowcount > 0:
+                print(f"Удалено {self.cursor.rowcount} запись(ей) с beer_name = {delete_id}.")
+            else:
+                print(f"Запись с beer_name = {delete_id} не найдена.")
+            
+            # Сохранение изменений
+            self.conn.commit()
+            self.reset_ids_bottles()
+            self.load_bottles()
+        except sqlite3.Error as e:
+            print(f"Ошибка при удалении записи: {e}")
+
+    def delete_sale_by_bottle_id(self):
+        delete_id = self.search_bottle_id_deletion_entry.get()
+        
+        try:
+            # Удаление записи из таблицы Sales
+            self.cursor.execute("DELETE FROM Sales WHERE bottle_id = ?", (delete_id,))
+            
+            # Проверка, сколько строк было удалено
+            if self.cursor.rowcount > 0:
+                print(f"Удалено {self.cursor.rowcount} запись(ей) с bottle_id = {delete_id}.")
+            else:
+                print(f"Запись с bottle_id = {delete_id} не найдена.")
+            
+            # Сохранение изменений
+            self.conn.commit()
+            self.reset_ids_sales()
+            self.load_sales()
+        except sqlite3.Error as e:
+            print(f"Ошибка при удалении записи: {e}")
 
 
     def close_connection(self):
@@ -472,7 +588,7 @@ class MainPage:
         self.cursor.execute('''
         CREATE TABLE IF NOT EXISTS Sales (
             bottle_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            beer_name TEXT,
+            beer_type_id INTEGER,
             volume REAL NOT NULL,
             price REAL NOT NULL,
             producer_name TEXT
@@ -571,6 +687,19 @@ class MainPage:
         self.cursor.execute("ALTER TABLE TempSales RENAME TO Sales")
         
         self.conn.commit()
+
+    def annihilation(self):
+        if messagebox.askyesno(title="Confirmation", message="Do you want to delete the database?"):
+            self.close_connection()
+            #os.remove("C:\\Users\\aleks\\Desktop\\beer_database.db")
+            for row in self.tree1.get_children():
+                 self.tree1.delete(row)
+            for row in self.tree2.get_children():
+                self.tree2.delete(row)
+            for row in self.tree3.get_children():
+                self.tree3.delete(row)
+            for row in self.tree4.get_children():
+                self.tree4.delete(row)
 
 
 if __name__ == "__main__":
