@@ -1,13 +1,13 @@
 import tkinter as tk
-import sqlite3
 import os
 from tkinter import messagebox, ttk
+import mysql.connector
+from mysql.connector import Error 
 
-USER = "User"
-PASSWORD = "Password"
+USER = "user"
+PASSWORD = "T$^T4C&R657*V$8*9&CY"
 
 class LoginPage(tk.Frame):
-
     def __init__(self, master, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         login_lb = tk.Label(self, text="Login")
@@ -44,53 +44,16 @@ class MainPage:
         self.master.geometry("1320x800")
 
         # Создание или подключение к базе данных
-        self.conn = sqlite3.connect('beer_database.db')
+        self.conn = self.create_connection_db("Beer")
         self.cursor = self.conn.cursor()
 
+        self.cursor.callproc('create_producers')
+        self.cursor.callproc('create_beer_types')
+        self.cursor.callproc('create_bottles')
+        self.cursor.callproc('create_sales')
+        
         style = ttk.Style()
         style.configure("Treeview", rowheight = 15)
-
-        # Создание таблицы производителей, если она не существует
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Producers (
-            producer_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            country TEXT NOT NULL,
-            total_amount INTEGER,
-            UNIQUE(name, country)  -- Добавление уникального ограничения
-        )
-        ''')
-
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS BeerTypes (
-            beer_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            alcohol_content REAL NOT NULL,
-            producer_id INTEGER
-        )
-        ''')
-       
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Bottles (
-            bottle_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            beer_name TEXT,
-            volume REAL NOT NULL,
-            price REAL NOT NULL,
-            producer_name TEXT
-        )
-        ''') 
-
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Sales (
-            sale_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bottle_id INTEGER,
-            beer_type_id REAL NOT NULL,
-            cost INTEGER,
-            date DATE
-        )
-        ''') 
-        
-        self.conn.commit()
 
         # Ввод данных о производителе
         self.f1 = tk.Frame(self.master, width = 100, height = 100, relief=tk.GROOVE, borderwidth=4)
@@ -287,29 +250,42 @@ class MainPage:
 
         # Кнопка сноса датабазы
         tk.Button(self.master, text="Delete Database", command=self.annihilation).grid(row=2, column=1)
-        
+
+    def create_connection_db(self, db_name = None):
+        connection_db = None
+        try:
+            connection_db = mysql.connector.connect(
+                host = "localhost",
+                user = "user",
+                passwd = "T$^T4C&R657*V$8*9&CY",
+                database = db_name
+            )
+            print("Подключение к MySQL успешно выполнено")
+        except Error as db_connection_error:
+            print("Возникла ошибка: ", db_connection_error)
+        return connection_db        
 
     def add_producer(self):
         name = self.producer_name_entry.get()
         country = self.producer_country_entry.get()
-        
+
         if name and country:
             try:
-                self.cursor.execute("INSERT INTO Producers (name, country, total_amount) VALUES (?, ?, ?)", (name, country, 0))
-                self.conn.commit()
-                messagebox.showinfo("Success", "Producer added successfully!")
+                self.cursor.callproc('AddProducer', (name, country, 0))
                 self.clear_entries()
                 self.load_producers()
-            except sqlite3.IntegrityError:
+                self.conn.commit()
+            except:
                 messagebox.showwarning("Input Error", "This producer already exists.")
         else:
             messagebox.showwarning("Input Error", "Please fill in all fields.")
 
     def delete_producer(self):
         selected_item = self.tree1.selection()
+        
         if selected_item:
-            producer_id = self.tree1.item(selected_item, 'values')[0]  # Получаем ID выбранного производителя
-            self.cursor.execute("DELETE FROM Producers WHERE producer_id = ?", (producer_id,))
+            producer_name = self.tree1.item(selected_item, 'values')[1]  # Получаем ID выбранного производителя
+            self.cursor.callproc('DeleteProducer', tuple((producer_name,)))
             self.conn.commit()
             messagebox.showinfo("Success", "Producer deleted successfully!")
             self.reset_ids()
@@ -323,20 +299,21 @@ class MainPage:
         producer_id = self.beer_producer_id_entry.get()
 
         if name and alcohol_content and producer_id:
-            self.cursor.execute("INSERT INTO BeerTypes (name, alcohol_content, producer_id) VALUES (?, ?, ?)", 
-                           (name, float(alcohol_content), int(producer_id)))
-            self.conn.commit()
-            messagebox.showinfo("Success", "Beer type added successfully!")
-            self.clear_entries()
-            self.load_beer_types()
+            try:
+                self.cursor.callproc('AddBeerType', (name, alcohol_content, producer_id))
+                self.clear_entries()
+                self.load_beer_types()
+                self.conn.commit()
+            except:
+                messagebox.showwarning("Input Error", "Incorrect data")
         else:
             messagebox.showwarning("Input Error", "Please fill in all fields.")
 
     def delete_beer_type(self):
         selected_item = self.tree2.selection()
         if selected_item:
-            beer_type_id = self.tree2.item(selected_item, 'values')[0]  # Получаем ID выбранного вида пива
-            self.cursor.execute("DELETE FROM BeerTypes WHERE beer_type_id = ?", (beer_type_id,))
+            beer_type_id = self.tree2.item(selected_item, 'values')[1]  # Получаем ID выбранного вида пива
+            self.cursor.callproc('DeleteBeerType', tuple((beer_type_id,)))
             self.conn.commit()
             messagebox.showinfo("Success", "Beer deleted successfully!")
             self.reset_ids_beer_type()
@@ -349,25 +326,13 @@ class MainPage:
         volume = self.volume_entry.get()
         price = self.price_entry.get()
         producer_name = self.beer_prod_entry.get()
-        print(self.beer_prod_entry.get())
-
-        data = self.cursor.execute("SELECT * FROM Bottles")
-        print(data.description)
 
         if name and volume and price and producer_name:
-            self.cursor.execute("INSERT INTO Bottles (beer_name, volume, price, producer_name) VALUES (?, ?, ?, ?)", 
-                           (name, volume, int(price), producer_name))
-            self.cursor.execute('''
-                UPDATE Producers
-                SET total_amount = total_amount + ?
-                WHERE name = ?
-                ''', (int(price), producer_name))
-            
-            self.conn.commit()
-            messagebox.showinfo("Success", "Bottle added successfully!")
+            self.cursor.callproc('AddBottle', (name, volume, price, producer_name))
             self.clear_entries()
             self.load_bottles()
             self.load_producers()
+            self.conn.commit()
         else:
             messagebox.showwarning("Input Error", "Please fill in all fields.")
 
@@ -375,7 +340,7 @@ class MainPage:
         selected_item = self.tree3.selection()
         if selected_item:
             bottle_id = self.tree3.item(selected_item, 'values')[0]  # Получаем ID выбранного вида пива
-            self.cursor.execute("DELETE FROM Bottles WHERE bottle_id = ?", (bottle_id,))
+            self.cursor.callproc('DeleteBottle', tuple((bottle_id,)))
             self.conn.commit()
             messagebox.showinfo("Success", "Beer deleted successfully!")
             self.reset_ids_bottles()
@@ -390,12 +355,12 @@ class MainPage:
         date = self.date_entry.get()
 
         if bottle_id and beer_type_id and cost and date:
-            self.cursor.execute("INSERT INTO Sales (bottle_id, beer_type_id, cost, date) VALUES (?, ?, ?, ?)", 
-                           (bottle_id, beer_type_id, cost, date))
-            self.conn.commit()
-            messagebox.showinfo("Success", "Sale added successfully!")
+           
+            self.cursor.callproc('AddSale', (bottle_id, beer_type_id, cost, date))
             self.clear_entries()
             self.load_sales()
+            self.conn.commit()
+            
         else:
             messagebox.showwarning("Input Error", "Please fill in all fields.")
 
@@ -403,7 +368,7 @@ class MainPage:
         selected_item = self.tree4.selection()
         if selected_item:
             sale_id = self.tree4.item(selected_item, 'values')[0]  # Получаем ID выбранной транзакции
-            self.cursor.execute("DELETE FROM Sales WHERE sale_id = ?", (sale_id,))
+            self.cursor.callproc('DeleteSale', tuple((sale_id,)))
             self.conn.commit()
             messagebox.showinfo("Success", "Sale deleted successfully!")
             self.reset_ids_sales()
@@ -412,88 +377,86 @@ class MainPage:
             messagebox.showwarning("Selection Error", "Please select a producer to delete.")
 
     def search_producers(self):
-        self.cursor.execute("SELECT * FROM Producers WHERE name LIKE ?", ('%' + self.search_producer_entry.get() + '%',))
-        
-        results = self.cursor.fetchall()  # Получаем все результаты
-        
+        self.cursor.callproc('SearchProducer', tuple((self.search_producer_entry.get(),)))
+
         for row in self.tree1.get_children():
             self.tree1.delete(row)
+
+        for result in self.cursor.stored_results():
+            for row in result.fetchall():
+                self.tree1.insert("", tk.END, values=row)
+
         
-        
-        for row in results:
-            self.tree1.insert("", tk.END, values=row)
 
     def search_beer_type(self):
-        self.cursor.execute("SELECT * FROM BeerTypes WHERE name LIKE ?", ('%' + self.search_beer_type_entry.get() + '%',))
-        
-        results = self.cursor.fetchall()  # Получаем все результаты
-        
+        self.cursor.callproc('SearchBeerType', tuple((self.search_beer_type_entry.get(),)))
+
         for row in self.tree2.get_children():
             self.tree2.delete(row)
         
-        
-        for row in results:
-            self.tree2.insert("", tk.END, values=row)
+        for result in self.cursor.stored_results():
+            for row in result.fetchall():
+                self.tree2.insert("", tk.END, values=row)
 
     def search_bottles(self):
-        self.cursor.execute("SELECT * FROM Bottles WHERE beer_name LIKE ?", ('%' + self.search_bottle_name_entry.get() + '%',))
-        
-        results = self.cursor.fetchall()  # Получаем все результаты
-        
+        self.cursor.callproc('SearchBottle', tuple((self.search_bottle_name_entry.get(),)))
+
         for row in self.tree3.get_children():
             self.tree3.delete(row)
-        
-        
-        for row in results:
-            self.tree3.insert("", tk.END, values=row)
+
+        for result in self.cursor.stored_results():
+            for row in result.fetchall():
+                self.tree3.insert("", tk.END, values=row)
 
     def search_sales(self):
-        self.cursor.execute("SELECT * FROM Sales WHERE bottle_id LIKE ?", ('%' + self.search_sale_name_entry.get() + '%',))
-        
-        results = self.cursor.fetchall()  # Получаем все результаты
-        
+        self.cursor.callproc('SearchSale', tuple((self.search_sale_name_entry.get(),)))
+
         for row in self.tree4.get_children():
             self.tree4.delete(row)
-        
-        
-        for row in results:
-            self.tree4.insert("", tk.END, values=row)
+
+        for result in self.cursor.stored_results():
+            for row in result.fetchall():
+                self.tree4.insert("", tk.END, values=row)
 
     def load_producers(self):
+        self.cursor.callproc('LoadProducers')
         # Очистка списка перед загрузкой новых данных
         for row in self.tree1.get_children():
             self.tree1.delete(row)
-        
-        self.cursor.execute("SELECT * FROM Producers")
-        for row in self.cursor.fetchall():
-            self.tree1.insert("", tk.END, values=row)
+
+        for result in self.cursor.stored_results():
+            for row in result.fetchall():
+                self.tree1.insert("", tk.END, values=row)
 
     def load_beer_types(self):
+        self.cursor.callproc('LoadBeerTypes')
         # Очистка списка перед загрузкой новых данных
         for row in self.tree2.get_children():
             self.tree2.delete(row)
-        
-        self.cursor.execute("SELECT * FROM BeerTypes")
-        for row in self.cursor.fetchall():
-            self.tree2.insert("", tk.END, values=row)
+
+        for result in self.cursor.stored_results():
+            for row in result.fetchall():
+                self.tree2.insert("", tk.END, values=row)
 
     def load_bottles(self):
+        self.cursor.callproc('LoadBottles')
         # Очистка списка перед загрузкой новых данных
         for row in self.tree3.get_children():
             self.tree3.delete(row)
-        
-        self.cursor.execute("SELECT * FROM Bottles")
-        for row in self.cursor.fetchall():
-            self.tree3.insert("", tk.END, values=row)
+
+        for result in self.cursor.stored_results():
+            for row in result.fetchall():
+                self.tree3.insert("", tk.END, values=row)
 
     def load_sales(self):
+        self.cursor.callproc('LoadSales')
         # Очистка списка перед загрузкой новых данных
         for row in self.tree4.get_children():
             self.tree4.delete(row)
-        
-        self.cursor.execute("SELECT * FROM Sales")
-        for row in self.cursor.fetchall():
-            self.tree4.insert("", tk.END, values=row)
+
+        for result in self.cursor.stored_results():
+            for row in result.fetchall():
+                self.tree4.insert("", tk.END, values=row)
 
     def clear_entries(self):
         self.producer_name_entry.delete(0, tk.END)
@@ -503,28 +466,28 @@ class MainPage:
         delete_id = self.search_bottle_for_deletion_entry.get()
         
         try:
-            # Удаление записи из таблицы Sales
-            self.cursor.execute("DELETE FROM Bottles WHERE beer_name = ?", (delete_id,))
-            
-            # Проверка, сколько строк было удалено
+            # Удаление записи из таблицы njxy
+            self.cursor.callproc('DeleteBottleName', tuple((delete_id,)))
+                
+                # Проверка, сколько строк было удалено
             if self.cursor.rowcount > 0:
                 print(f"Удалено {self.cursor.rowcount} запись(ей) с beer_name = {delete_id}.")
             else:
                 print(f"Запись с beer_name = {delete_id} не найдена.")
-            
-            # Сохранение изменений
+                
+                # Сохранение изменений
             self.conn.commit()
             self.reset_ids_bottles()
             self.load_bottles()
-        except sqlite3.Error as e:
-            print(f"Ошибка при удалении записи: {e}")
+        except:
+            print(f"Ошибка при удалении записи")
 
     def delete_sale_by_bottle_id(self):
         delete_id = self.search_bottle_id_deletion_entry.get()
         
         try:
             # Удаление записи из таблицы Sales
-            self.cursor.execute("DELETE FROM Sales WHERE bottle_id = ?", (delete_id,))
+            self.cursor.callproc('DeleteSaleID', tuple((delete_id,)))
             
             # Проверка, сколько строк было удалено
             if self.cursor.rowcount > 0:
@@ -536,162 +499,51 @@ class MainPage:
             self.conn.commit()
             self.reset_ids_sales()
             self.load_sales()
-        except sqlite3.Error as e:
+        except:
             print(f"Ошибка при удалении записи: {e}")
-
 
     def close_connection(self):
         self.conn.close()
 
     def clear_producers(self):
-        self.cursor.execute("DROP TABLE Producers")
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Producers (
-            producer_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            country TEXT NOT NULL,
-            total_amount INTEGER
-        )
-        ''')
+        self.cursor.callproc('ClearProducers')
         self.conn.commit()
         self.load_producers()
 
     def clear_beer_types(self):
-        self.cursor.execute("DROP TABLE BeerTypes")
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS BeerTypes (
-            beer_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            alcohol_content REAL NOT NULL,
-            producer_id INTEGER
-        )
-        ''')
+        self.cursor.callproc('ClearBeerTypes')
         self.conn.commit()
         self.load_beer_types()
 
     def clear_bottles(self):
-        self.cursor.execute("DROP TABLE Bottles")
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Bottles (
-            bottle_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            beer_name TEXT,
-            volume REAL NOT NULL,
-            price REAL NOT NULL,
-            producer_name TEXT
-        )
-        ''')
+        self.cursor.callproc('ClearBottles')
         self.conn.commit()
         self.load_bottles()
 
     def clear_sales(self):
-        self.cursor.execute("DROP TABLE Sales")
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Sales (
-            bottle_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            beer_type_id INTEGER,
-            volume REAL NOT NULL,
-            price REAL NOT NULL,
-            producer_name TEXT
-        )
-        ''')
+        self.cursor.callproc('ClearSales')
         self.conn.commit()
         self.load_sales()
     
     def reset_ids(self):
-        # Создаем временную таблицу с новыми идентификаторами
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS TempProducers (
-            producer_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            country TEXT NOT NULL,
-            total_amount INTEGER,
-            UNIQUE(name, country)  -- Добавление уникального ограничения
-        )
-        ''')
-        
-        # Копируем данные из старой таблицы в новую с новыми идентификаторами
-        self.cursor.execute("INSERT INTO TempProducers (name, country, total_amount) SELECT name, country, total_amount FROM Producers")
-        
-        # Удаляем старую таблицу
-        self.cursor.execute("DROP TABLE Producers")
-        
-        # Переименовываем временную таблицу в основную
-        self.cursor.execute("ALTER TABLE TempProducers RENAME TO Producers")
+        self.cursor.callproc('ResetIDsProducers')
 
-        self.conn.commit()
-        
     def reset_ids_beer_type(self):
-        # Создаем временную таблицу с новыми идентификаторами
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS TempBeerTypes (
-            beer_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            alcohol_content REAL NOT NULL,
-            producer_id INTEGER
-        )
-        ''')
-        
-        # Копируем данные из старой таблицы в новую с новыми идентификаторами
-        self.cursor.execute("INSERT INTO TempBeerTypes (name, alcohol_content, producer_id) SELECT name, alcohol_content, producer_id  FROM BeerTypes")
-        
-        # Удаляем старую таблицу
-        self.cursor.execute("DROP TABLE BeerTypes")
-        
-        # Переименовываем временную таблицу в основную
-        self.cursor.execute("ALTER TABLE TempBeerTypes RENAME TO BeerTypes")
-        
-        self.conn.commit()
+        self.cursor.callproc('ResetIDsBeerTypes')    
 
     def reset_ids_bottles(self):
-        # Создаем временную таблицу с новыми идентификаторами
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS TempBottles (
-            bottle_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            beer_name TEXT,
-            volume REAL NOT NULL,
-            price REAL NOT NULL,
-            producer_name TEXT
-        )
-        ''')
-        
-        # Копируем данные из старой таблицы в новую с новыми идентификаторами
-        self.cursor.execute("INSERT INTO TempBottles (beer_name, volume, price, producer_name) SELECT beer_name, volume, price, producer_name FROM Bottles")
-        
-        # Удаляем старую таблицу
-        self.cursor.execute("DROP TABLE Bottles")
-        
-        # Переименовываем временную таблицу в основную
-        self.cursor.execute("ALTER TABLE TempBottles RENAME TO Bottles")
-        
-        self.conn.commit()
+        self.cursor.callproc('ResetIDsBottles')
 
     def reset_ids_sales(self):
-        # Создаем временную таблицу с новыми идентификаторами
-        self.cursor.execute('''
-        CREATE TABLE IF NOT EXISTS TempSales (
-            sale_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bottle_id INTEGER,
-            beer_type_id REAL NOT NULL,
-            cost INTEGER,
-            date DATE
-        )
-        ''')
-        
-        # Копируем данные из старой таблицы в новую с новыми идентификаторами
-        self.cursor.execute("INSERT INTO TempSales (bottle_id, beer_type_id, cost, date) SELECT bottle_id, beer_type_id, cost, date FROM Sales")
-        
-        # Удаляем старую таблицу
-        self.cursor.execute("DROP TABLE Sales")
-        
-        # Переименовываем временную таблицу в основную
-        self.cursor.execute("ALTER TABLE TempSales RENAME TO Sales")
-        
-        self.conn.commit()
+        self.cursor.callproc('ResetIDsSales')
 
     def annihilation(self):
         if messagebox.askyesno(title="Confirmation", message="Do you want to delete the database?"):
             self.close_connection()
-            #os.remove("C:\\Users\\aleks\\Desktop\\beer_database.db")
+            try:
+                os.remove("C:\\Users\\aleks\\Desktop\\beer_database.db")
+            except:
+                pass
             for row in self.tree1.get_children():
                  self.tree1.delete(row)
             for row in self.tree2.get_children():
@@ -706,14 +558,6 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.geometry("300x200")
     root.title("BEER DATABASE")
-
     login = LoginPage(root)
-    #main = MainPage(root)
     login.grid(row=0,column=0)
-
-    
-    # Закрытие соединения с базой данных при выходе
-    #root.protocol("WM_DELETE_WINDOW", lambda: [main.close_connection(), root.destroy()])
-    
-    # Запуск основного цикла приложения
     root.mainloop()
